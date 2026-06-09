@@ -51,7 +51,7 @@ export default function RegisterPage() {
               required
               value={form.nama}
               onChange={(e) => setForm({ ...form, nama: e.target.value })}
-              placeholder="Husna Tazkia"
+              placeholder="Nama kamu"
               className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#185FA5] focus:border-transparent"
             />
           </div>
@@ -62,7 +62,7 @@ export default function RegisterPage() {
               required
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="husna@email.com"
+              placeholder="nama@email.com"
               className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#185FA5] focus:border-transparent"
             />
           </div>
