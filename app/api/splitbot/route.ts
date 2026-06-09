@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, konteksGrup } = await req.json();
+    const body = await req.json();
+    const { messages, konteksGrup } = body;
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -16,22 +17,9 @@ export async function POST(req: NextRequest) {
         messages: [
           {
             role: 'system',
-            content: `Kamu adalah SplitBot, asisten AI untuk aplikasi SplitCerdas — aplikasi patungan berbasis syariah Islam.
-
-Tugasmu:
-- Bantu pengguna menganalisis pengeluaran dan hutang piutang grup
-- Berikan saran pembagian yang adil dan sesuai prinsip syariah
-- Jelaskan prinsip Qardh (pinjaman tanpa bunga) secara sederhana
-- Deteksi dan ingatkan jika ada potensi riba
-- Jawab dalam Bahasa Indonesia yang ramah dan mudah dipahami
-- Gunakan emoji secukupnya agar lebih menarik
-
-Konteks grup saat ini:
-${konteksGrup}
-
-Jawab dengan singkat dan to the point (maks 3-4 kalimat kecuali diminta detail).`,
+            content: `Kamu adalah SplitBot, asisten AI untuk aplikasi SplitCerdas. Jawab dalam Bahasa Indonesia yang ramah. Gunakan emoji secukupnya.\n\nKonteks grup:\n${konteksGrup || 'Tidak ada konteks'}`,
           },
-          ...messages.map((m: any) => ({
+          ...messages.map((m: { role: string; content: string }) => ({
             role: m.role,
             content: m.content,
           })),
@@ -39,11 +27,18 @@ Jawab dengan singkat dan to the point (maks 3-4 kalimat kecuali diminta detail).
       }),
     });
 
-    const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content ?? 'Maaf, tidak bisa memproses.';
+    if (!groqResponse.ok) {
+      const errText = await groqResponse.text();
+      console.error('Groq error:', errText);
+      return NextResponse.json({ reply: 'Maaf, SplitBot sedang bermasalah.' }, { status: 500 });
+    }
+
+    const data = await groqResponse.json();
+    const reply = data.choices?.[0]?.message?.content ?? 'Maaf, tidak ada respons.';
     return NextResponse.json({ reply });
+
   } catch (error) {
     console.error('SplitBot error:', error);
-    return NextResponse.json({ reply: 'Maaf, SplitBot sedang bermasalah. Coba lagi nanti.' }, { status: 500 });
+    return NextResponse.json({ reply: 'Maaf, terjadi kesalahan.' }, { status: 500 });
   }
 }
