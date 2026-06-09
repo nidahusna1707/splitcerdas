@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
-
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
 
 export async function POST(req: NextRequest) {
   try {
     const { messages, konteksGrup } = await req.json();
 
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 500,
-      system: `Kamu adalah SplitBot, asisten AI untuk aplikasi SplitCerdas — aplikasi patungan berbasis syariah Islam.
-      
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'llama3-8b-8192',
+        max_tokens: 500,
+        messages: [
+          {
+            role: 'system',
+            content: `Kamu adalah SplitBot, asisten AI untuk aplikasi SplitCerdas — aplikasi patungan berbasis syariah Islam.
+
 Tugasmu:
 - Bantu pengguna menganalisis pengeluaran dan hutang piutang grup
 - Berikan saran pembagian yang adil dan sesuai prinsip syariah
@@ -26,13 +30,17 @@ Konteks grup saat ini:
 ${konteksGrup}
 
 Jawab dengan singkat dan to the point (maks 3-4 kalimat kecuali diminta detail).`,
-      messages: messages.map((m: any) => ({
-        role: m.role,
-        content: m.content,
-      })),
+          },
+          ...messages.map((m: any) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        ],
+      }),
     });
 
-    const reply = response.content[0]?.type === 'text' ? response.content[0].text : 'Maaf, tidak bisa memproses.';
+    const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content ?? 'Maaf, tidak bisa memproses.';
     return NextResponse.json({ reply });
   } catch (error) {
     console.error('SplitBot error:', error);
